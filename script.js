@@ -201,8 +201,22 @@ function calculate() {
         const remoteHours = parseFloat(document.getElementById('remoteHours').value);
         if (isNaN(remoteHours) || remoteHours <= 0) return;
 
-        const remoteEnd = BASE_IN + (remoteHours * 60);
+        let remoteMins = remoteHours * 60;
+        let remoteEnd = BASE_IN;
+        let pMins = 0;
+        while(pMins < remoteMins) {
+            if (remoteEnd < LUNCH_START || remoteEnd >= LUNCH_END) {
+                pMins++;
+            }
+            remoteEnd++;
+        }
         
+        let warningNote = '';
+        if (remoteEnd === LUNCH_START) {
+            warningNote = `<br><small style="opacity:0.8">因為接下來是午休，請於 13:00 打卡</small>`;
+        } else if (remoteEnd > LUNCH_START && remoteEnd < LUNCH_END) {
+             warningNote = `<br><small style="opacity:0.8">因為遇到午休，請於午休後 13:00 打卡</small>`;
+        }
         html += `<div class="res-box res-info">
             📋 系統請假申請： <br>
             請申請 <strong>09:30 - ${minsToTime(remoteEnd)}</strong> 的「遠端會議假」。
@@ -217,9 +231,13 @@ function calculate() {
             }
 
             let latestClockIn = getLatestClockIn(remoteHours * 60);
+            
+            // Special overriding rule for lunch time boundaries:
+            // Since max out time is 19:30, if you need 6.5h of work (19:30 - 13:00), 
+            // you must clock in at 13:00. This is naturally handled by getLatestClockIn.
 
             html += `<div class="res-box res-warning">
-                ⏰ 最晚進公司打卡時限： <strong>${minsToTime(latestClockIn)}</strong>
+                ⏰ 最晚進公司打卡時限： <strong>${minsToTime(latestClockIn)}</strong> ${warningNote}
             </div>`;
 
             if (clockIn > latestClockIn) {
