@@ -143,6 +143,12 @@ function calculate() {
             return;
         }
 
+        // Rule: Morning leave must start at 09:30
+        if (ls < LUNCH_START && ls !== BASE_IN) {
+            formatResult('<div class="res-box res-danger">若是上班天請假 (12:00前)，請假開始時間都要 09:30</div>');
+            return;
+        }
+
         let netLeave = calcLeave(ls, le);
         html += `<div class="res-box res-info">
             📋 本次假單扣除時數： <strong>${(netLeave/60).toFixed(1)}</strong> 小時
