@@ -183,7 +183,11 @@ function calculate() {
                  您實際上班時間(${minsToTime(clockIn)})已超過請假賦予的彈性時限(${minsToTime(latestClockIn)})！請再補請假單。
                  </div>`;
             }
-            let effectiveIn = clockIn < FLEX_EARLY_IN ? FLEX_EARLY_IN : clockIn;
+            
+            // Suggested clock out should be based on latest allowed clock in, not actual clock in,
+            // otherwise a late clock in suggests an illegally late clock out.
+            let effectiveClockIn = Math.min(clockIn, latestClockIn);
+            let effectiveIn = effectiveClockIn < FLEX_EARLY_IN ? FLEX_EARLY_IN : effectiveClockIn;
             let outTime = calcOutTime(effectiveIn, netLeave);
             if (outTime > 19 * 60 + 30) outTime = 19 * 60 + 30;
             
@@ -249,7 +253,10 @@ function calculate() {
                  您實際上班時間(${minsToTime(clockIn)})已超過遠端會議賦予的彈性時限(${minsToTime(latestClockIn)})！請補請一般假。
                  </div>`;
             }
-            let effectiveIn = clockIn < FLEX_EARLY_IN ? FLEX_EARLY_IN : clockIn;
+            
+            // Suggested clock out should be based on latest allowed clock in, not actual clock in
+            let effectiveClockIn = Math.min(clockIn, latestClockIn);
+            let effectiveIn = effectiveClockIn < FLEX_EARLY_IN ? FLEX_EARLY_IN : effectiveClockIn;
             let outTime = calcOutTime(effectiveIn, remoteHours * 60);
             if (outTime > 19 * 60 + 30) outTime = 19 * 60 + 30;
             
