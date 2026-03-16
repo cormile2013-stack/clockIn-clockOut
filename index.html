@@ -33,7 +33,7 @@
                     <p class="section-desc">試算在不請假的情況下，何時應該下班打卡。</p>
                     <div class="input-group">
                         <label>實際/預計上班打卡時間</label>
-                        <input type="time" id="clockIn-normal" class="time-input" required>
+                        <input type="time" id="clockIn-normal" class="time-input" min="08:30" max="19:30" required>
                     </div>
                 </div>
 
@@ -43,16 +43,16 @@
                     <div class="row">
                         <div class="input-group">
                             <label>請假開始時間</label>
-                            <input type="time" id="leaveStart" class="time-input" value="09:30">
+                            <input type="time" id="leaveStart" class="time-input" value="09:30" min="08:30" max="19:30">
                         </div>
                         <div class="input-group">
                             <label>請假結束時間</label>
-                            <input type="time" id="leaveEnd" class="time-input" value="18:30">
+                            <input type="time" id="leaveEnd" class="time-input" value="18:30" min="08:30" max="19:30">
                         </div>
                     </div>
                     <div class="input-group">
                         <label>進辦公室打卡時間 <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">必填</span></label>
-                        <input type="time" id="clockIn-leave" class="time-input" required>
+                        <input type="time" id="clockIn-leave" class="time-input" min="08:30" max="19:30" required>
                     </div>
                 </div>
 
@@ -74,7 +74,7 @@
                     </div>
                     <div class="input-group">
                         <label>進辦公室打卡時間 <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">必填</span></label>
-                        <input type="time" id="clockIn-remote" class="time-input" required>
+                        <input type="time" id="clockIn-remote" class="time-input" min="08:30" max="19:30" required>
                     </div>
                 </div>
 
