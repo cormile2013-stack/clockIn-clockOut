@@ -47,15 +47,21 @@ function calcLeave(leaveStart, leaveEnd) {
     return leaveLen - overlap;
 }
 
-// Calculate max flexible clock-in time based on leave end
-function getLatestClockIn(leaveEnd) {
+// Calculate max flexible clock-in time based on leave start and end
+function getLatestClockIn(leaveStart, leaveEnd) {
+    if (leaveStart > FLEX_LATE_IN) {
+        return FLEX_LATE_IN;
+    }
+
     if (leaveEnd < LUNCH_START) {
         let maxTime = leaveEnd + 60;
         return maxTime > LUNCH_START ? LUNCH_START : maxTime;
     } else if (leaveEnd >= LUNCH_START && leaveEnd < LUNCH_END) {
         return LUNCH_END; // Clock in right after lunch
     } else {
-        return leaveEnd + 60;
+        let maxTime = leaveEnd + 60;
+        if (maxTime > 19 * 60 + 30) maxTime = 19 * 60 + 30;
+        return maxTime;
     }
 }
 
@@ -152,7 +158,12 @@ function calculate() {
         if (netLeave >= WORK_MINS) {
             html += `<div class="res-box res-success">🎯 您已請滿全天(8小時)，無需打卡！</div>`;
         } else {
-            let latestClockIn = getLatestClockIn(le);
+            if (clockIn === null) {
+                formatResult('<div class="res-box res-danger">請輸入進辦公室打卡時間</div>');
+                return;
+            }
+
+            let latestClockIn = getLatestClockIn(ls, le);
             let warningNote = '';
             if (le < LUNCH_START && (le + 60) > LUNCH_START) {
                 warningNote = `<br><small style="opacity:0.8">因為遇到午休，打卡彈性最高只到 12:00</small>`;
@@ -164,32 +175,23 @@ function calculate() {
                 ⏰ 最晚進公司打卡時限： <strong>${minsToTime(latestClockIn)}</strong> ${warningNote}
             </div>`;
 
-            if (clockIn !== null) {
-                if (clockIn > latestClockIn) {
-                     html += `<div class="res-box res-danger">
-                     ⚠️ <strong>警告</strong><br>
-                     您實際上班時間(${minsToTime(clockIn)})已超過請假賦予的彈性時限(${minsToTime(latestClockIn)})！請再補請假單。
-                     </div>`;
-                }
-                let effectiveIn = clockIn < FLEX_EARLY_IN ? FLEX_EARLY_IN : clockIn;
-                let outTime = calcOutTime(effectiveIn, netLeave);
-                if (outTime > 19 * 60 + 30) outTime = 19 * 60 + 30;
-                
-                // Check if they came in later than allowed flex based on leave
-                // For example, if morning leave ends at 12:00, they have 1 hr flex until 13:00?
-                // Actually, the rules imply flex still exists after leave. But usually they arrive promptly.
-                // Let's just calculate outTime.
-                if (outTime <= clockIn) {
-                    html += `<div class="res-box res-success">🎯 您的工作時數已達標，無需再上班！</div>`;
-                } else {
-                    html += `<div class="res-box res-success">
-                        🎯 建議下班打卡時間： <br>
-                        <span class="time-highlight">${minsToTime(outTime)}</span>
-                    </div>`;
-                }
+            if (clockIn > latestClockIn) {
+                 html += `<div class="res-box res-danger">
+                 ⚠️ <strong>警告</strong><br>
+                 您實際上班時間(${minsToTime(clockIn)})已超過請假賦予的彈性時限(${minsToTime(latestClockIn)})！請再補請假單。
+                 </div>`;
+            }
+            let effectiveIn = clockIn < FLEX_EARLY_IN ? FLEX_EARLY_IN : clockIn;
+            let outTime = calcOutTime(effectiveIn, netLeave);
+            if (outTime > 19 * 60 + 30) outTime = 19 * 60 + 30;
+            
+            // Check if they came in later than allowed flex based on leave
+            if (outTime <= clockIn) {
+                html += `<div class="res-box res-success">🎯 您的工作時數已達標，無需再上班！</div>`;
             } else {
-                 html += `<div class="res-box res-warning">
-                    若要試算下班時間，請填寫「進辦公室打卡時間」。
+                html += `<div class="res-box res-success">
+                    🎯 建議下班打卡時間： <br>
+                    <span class="time-highlight">${minsToTime(outTime)}</span>
                 </div>`;
             }
         }
@@ -208,7 +210,12 @@ function calculate() {
         if (remoteHours >= 8) {
             html += `<div class="res-box res-success">🎯 您的遠端會議已達全天(8小時)，無需進辦公室打卡！</div>`;
         } else {
-            let latestClockIn = getLatestClockIn(remoteEnd);
+            if (clockIn === null) {
+                formatResult('<div class="res-box res-danger">請輸入進辦公室打卡時間</div>');
+                return;
+            }
+
+            let latestClockIn = getLatestClockIn(BASE_IN, remoteEnd);
             let warningNote = '';
             if (remoteEnd < LUNCH_START && (remoteEnd + 60) > LUNCH_START) {
                 warningNote = `<br><small style="opacity:0.8">因為遇到午休，打卡彈性最高只到 12:00</small>`;
@@ -220,22 +227,20 @@ function calculate() {
                 ⏰ 最晚進公司打卡時限： <strong>${minsToTime(latestClockIn)}</strong> ${warningNote}
             </div>`;
 
-            if (clockIn !== null) {
-                if (clockIn > latestClockIn) {
-                     html += `<div class="res-box res-danger">
-                     ⚠️ <strong>警告</strong><br>
-                     您實際上班時間(${minsToTime(clockIn)})已超過遠端會議賦予的彈性時限(${minsToTime(latestClockIn)})！請補請一般假。
-                     </div>`;
-                }
-                let effectiveIn = clockIn < FLEX_EARLY_IN ? FLEX_EARLY_IN : clockIn;
-                let outTime = calcOutTime(effectiveIn, remoteHours * 60);
-                if (outTime > 19 * 60 + 30) outTime = 19 * 60 + 30;
-                
-                 html += `<div class="res-box res-success">
-                    🎯 建議下班打卡時間： <br>
-                    <span class="time-highlight">${minsToTime(outTime)}</span>
-                </div>`;
+            if (clockIn > latestClockIn) {
+                 html += `<div class="res-box res-danger">
+                 ⚠️ <strong>警告</strong><br>
+                 您實際上班時間(${minsToTime(clockIn)})已超過遠端會議賦予的彈性時限(${minsToTime(latestClockIn)})！請補請一般假。
+                 </div>`;
             }
+            let effectiveIn = clockIn < FLEX_EARLY_IN ? FLEX_EARLY_IN : clockIn;
+            let outTime = calcOutTime(effectiveIn, remoteHours * 60);
+            if (outTime > 19 * 60 + 30) outTime = 19 * 60 + 30;
+            
+             html += `<div class="res-box res-success">
+                🎯 建議下班打卡時間： <br>
+                <span class="time-highlight">${minsToTime(outTime)}</span>
+            </div>`;
         }
     }
 
