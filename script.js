@@ -47,22 +47,23 @@ function calcLeave(leaveStart, leaveEnd) {
     return leaveLen - overlap;
 }
 
-// Calculate max flexible clock-in time based on leave start and end
-function getLatestClockIn(leaveStart, leaveEnd) {
-    if (leaveStart > FLEX_LATE_IN) {
-        return FLEX_LATE_IN;
+// Calculate max flexible clock-in time based on net leave
+function getLatestClockIn(netLeaveMins) {
+    let reqWork = WORK_MINS - netLeaveMins;
+    if (reqWork <= 0) return 19 * 60 + 30; // 19:30
+    
+    // Work backwards from 19:30 (1170 mins)
+    let maxOutTime = 19 * 60 + 30;
+    let current = maxOutTime;
+    let worked = 0;
+    
+    while(worked < reqWork) {
+        current--;
+        if (current < LUNCH_START || current >= LUNCH_END) {
+            worked++;
+        }
     }
-
-    if (leaveEnd < LUNCH_START) {
-        let maxTime = leaveEnd + 60;
-        return maxTime > LUNCH_START ? LUNCH_START : maxTime;
-    } else if (leaveEnd >= LUNCH_START && leaveEnd < LUNCH_END) {
-        return LUNCH_END; // Clock in right after lunch
-    } else {
-        let maxTime = leaveEnd + 60;
-        if (maxTime > 19 * 60 + 30) maxTime = 19 * 60 + 30;
-        return maxTime;
-    }
+    return current;
 }
 
 // In is actual clock-in min, leaveMins is total leave taken in net minutes
@@ -163,16 +164,10 @@ function calculate() {
                 return;
             }
 
-            let latestClockIn = getLatestClockIn(ls, le);
-            let warningNote = '';
-            if (le < LUNCH_START && (le + 60) > LUNCH_START) {
-                warningNote = `<br><small style="opacity:0.8">因為遇到午休，打卡彈性最高只到 12:00</small>`;
-            } else if (le >= LUNCH_START && le < LUNCH_END) {
-                 warningNote = `<br><small style="opacity:0.8">因為遇到午休，請於午休後 13:00 打卡</small>`;
-            }
+            let latestClockIn = getLatestClockIn(netLeave);
 
             html += `<div class="res-box res-warning">
-                ⏰ 最晚進公司打卡時限： <strong>${minsToTime(latestClockIn)}</strong> ${warningNote}
+                ⏰ 最晚進公司打卡時限： <strong>${minsToTime(latestClockIn)}</strong>
             </div>`;
 
             if (clockIn > latestClockIn) {
@@ -215,16 +210,10 @@ function calculate() {
                 return;
             }
 
-            let latestClockIn = getLatestClockIn(BASE_IN, remoteEnd);
-            let warningNote = '';
-            if (remoteEnd < LUNCH_START && (remoteEnd + 60) > LUNCH_START) {
-                warningNote = `<br><small style="opacity:0.8">因為遇到午休，打卡彈性最高只到 12:00</small>`;
-            } else if (remoteEnd >= LUNCH_START && remoteEnd < LUNCH_END) {
-                 warningNote = `<br><small style="opacity:0.8">因為遇到午休，請於午休後 13:00 打卡</small>`;
-            }
+            let latestClockIn = getLatestClockIn(remoteHours * 60);
 
             html += `<div class="res-box res-warning">
-                ⏰ 最晚進公司打卡時限： <strong>${minsToTime(latestClockIn)}</strong> ${warningNote}
+                ⏰ 最晚進公司打卡時限： <strong>${minsToTime(latestClockIn)}</strong>
             </div>`;
 
             if (clockIn > latestClockIn) {
