@@ -48,12 +48,13 @@ function calcLeave(leaveStart, leaveEnd) {
 }
 
 // Calculate max flexible clock-in time based on net leave
-function getLatestClockIn(netLeaveMins) {
+// We work backwards from the time they leave work (either 19:30 or the leaveStart if they take afternoon leave).
+function getLatestClockIn(netLeaveMins, leaveStart = 19 * 60 + 30) {
     let reqWork = WORK_MINS - netLeaveMins;
     if (reqWork <= 0) return 19 * 60 + 30; // 19:30
     
-    // Work backwards from 19:30 (1170 mins)
-    let maxOutTime = 19 * 60 + 30;
+    // Work backwards from the earliest of 19:30 or their leaveStart time if they leave early
+    let maxOutTime = Math.min(19 * 60 + 30, leaveStart);
     let current = maxOutTime;
     let worked = 0;
     
@@ -170,7 +171,7 @@ function calculate() {
                 return;
             }
 
-            let latestClockIn = getLatestClockIn(netLeave);
+            let latestClockIn = getLatestClockIn(netLeave, ls);
 
             html += `<div class="res-box res-warning">
                 ⏰ 最晚進公司打卡時限： <strong>${minsToTime(latestClockIn)}</strong>
@@ -230,6 +231,8 @@ function calculate() {
                 return;
             }
 
+            // Remote meetings typically mean working, not leaving work early, but the latest clock in applies to
+            // when they must start working to meet the full 8h by 19:30.
             let latestClockIn = getLatestClockIn(remoteHours * 60);
             
             // Special overriding rule for lunch time boundaries:
