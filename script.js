@@ -106,6 +106,9 @@ function calculate() {
             return;
         }
 
+        let implicitLeave = 0;
+        let effectiveClockIn = clockIn;
+
         if (clockIn > FLEX_LATE_IN) {
             // Find necessary leave end time
             // To be allowed to clock in at `clockIn`, the leave must give enough flex time.
@@ -116,6 +119,10 @@ function calculate() {
             // Leave cannot end before BASE_IN (09:30)
             requiredLeaveEnd = Math.max(BASE_IN, requiredLeaveEnd);
             
+            implicitLeave = calcLeave(BASE_IN, requiredLeaveEnd);
+            let latestClockIn = getLatestClockIn(implicitLeave, BASE_IN); // BASE_IN since morning start
+            effectiveClockIn = Math.min(clockIn, latestClockIn);
+
             html += `<div class="res-box res-danger">
                 <div>⚠️ <strong>遲到警告</strong></div>
                 您已超過最晚彈性上班時間(10:30)。<br>
@@ -123,8 +130,8 @@ function calculate() {
             </div>`;
         }
 
-        let effectiveIn = clockIn < FLEX_EARLY_IN ? FLEX_EARLY_IN : clockIn;
-        let outTime = calcOutTime(effectiveIn, 0);
+        let effectiveIn = effectiveClockIn < FLEX_EARLY_IN ? FLEX_EARLY_IN : effectiveClockIn;
+        let outTime = calcOutTime(effectiveIn, implicitLeave);
         if (outTime > 19 * 60 + 30) outTime = 19 * 60 + 30;
 
         html += `<div class="res-box res-success">
