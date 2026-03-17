@@ -107,14 +107,19 @@ function calculate() {
         }
 
         if (clockIn > FLEX_LATE_IN) {
+            // Find necessary leave end time
+            // To be allowed to clock in at `clockIn`, the leave must give enough flex time.
+            // A leave ending at `leaveEnd` allows clock-in up to `leaveEnd + 60` (if before lunch).
+            // So leaveEnd + 60 >= clockIn  =>  leaveEnd >= clockIn - 60
+            // We round `clockIn - 60` UP to the nearest 30 mins.
+            let requiredLeaveEnd = Math.ceil((clockIn - 60) / 30) * 30;
+            // Leave cannot end before BASE_IN (09:30)
+            requiredLeaveEnd = Math.max(BASE_IN, requiredLeaveEnd);
+            
             html += `<div class="res-box res-danger">
                 <div>⚠️ <strong>遲到警告</strong></div>
                 您已超過最晚彈性上班時間(10:30)。<br>
-                建議補請假單 <strong>09:30 - ${minsToTime(Math.ceil((clockIn - BASE_IN)/30)*30 + BASE_IN > clockIn ? minsToTime(Math.ceil((clockIn - BASE_IN)/30)*30 + BASE_IN) : (() => {
-                    let minsLate = clockIn - BASE_IN;
-                    let roundedMins = Math.ceil(minsLate / 30) * 30;
-                    return minsToTime(BASE_IN + roundedMins);
-                })() )}</strong>，以免系統視為遲到！
+                建議補請假單 <strong>09:30 - ${minsToTime(requiredLeaveEnd)}</strong>，以免系統視為遲到！
             </div>`;
         }
 
