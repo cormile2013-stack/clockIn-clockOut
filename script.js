@@ -47,14 +47,18 @@ function calcLeave(leaveStart, leaveEnd) {
     return leaveLen - overlap;
 }
 
-// Calculate max flexible clock-in time based on net leave
-// We work backwards from the time they leave work (either 19:30 or the leaveStart if they take afternoon leave).
+// We work backwards from the time they leave work.
+// If they take an afternoon leave that ends their day early, we work backward from leaveStart.
+// Otherwise (e.g. morning leave), their day ends at the global maximum of 19:30.
 function getLatestClockIn(netLeaveMins, leaveStart = 19 * 60 + 30) {
     let reqWork = WORK_MINS - netLeaveMins;
     if (reqWork <= 0) return 19 * 60 + 30; // 19:30
     
-    // Work backwards from the earliest of 19:30 or their leaveStart time if they leave early
-    let maxOutTime = Math.min(19 * 60 + 30, leaveStart);
+    // If leave starts in the afternoon/evening, we assume they are leaving work at leaveStart
+    // so we must finish reqWork before leaveStart.
+    let isAfternoonLeave = leaveStart > LUNCH_END;
+    let maxOutTime = isAfternoonLeave ? Math.min(19 * 60 + 30, leaveStart) : (19 * 60 + 30);
+    
     let current = maxOutTime;
     let worked = 0;
     
