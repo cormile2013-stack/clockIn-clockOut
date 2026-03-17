@@ -189,11 +189,15 @@ function calculate() {
 
             let latestClockIn = getLatestClockIn(netLeave, ls);
 
-            html += `<div class="res-box res-warning">
-                ⏰ 最晚進公司打卡時限： <strong>${minsToTime(latestClockIn)}</strong>
-            </div>`;
+            // Only show latest clock-in suggestion if the leave is in the morning
+            // If the leave starts in the afternoon, they start work normally in the morning.
+            if (ls <= LUNCH_START) {
+                html += `<div class="res-box res-warning">
+                    ⏰ 最晚進公司打卡時限： <strong>${minsToTime(latestClockIn)}</strong>
+                </div>`;
+            }
 
-            if (clockIn > latestClockIn) {
+            if (clockIn > latestClockIn && ls <= LUNCH_START) {
                  html += `<div class="res-box res-danger">
                  ⚠️ <strong>警告</strong><br>
                  您實際上班時間(${minsToTime(clockIn)})已超過請假賦予的彈性時限(${minsToTime(latestClockIn)})！請再補請假單。
