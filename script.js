@@ -201,6 +201,11 @@ function calculate() {
                 
                 let morningLeaveMins = morningEnd - BASE_IN;
                 
+                // --- UPDATE TOTAL NEEDED LEAVE IF MORNING LEAVE FORCED IS LARGER ---
+                if (neededLeaveHours * 60 < morningLeaveMins) {
+                    neededLeaveHours = morningLeaveMins / 60;
+                }
+                
                 let remainingLeaveMins = (neededLeaveHours * 60) - morningLeaveMins;
                 if (remainingLeaveMins > 0) {
                     let eveningStart = effectiveOut;
