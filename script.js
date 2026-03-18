@@ -116,17 +116,21 @@ function calculate() {
             // So leaveEnd + 60 >= clockIn  =>  leaveEnd >= clockIn - 60
             // We round `clockIn - 60` UP to the nearest 30 mins.
             let requiredLeaveEnd = Math.ceil((clockIn - 60) / 30) * 30;
-            // Leave cannot end before BASE_IN (09:30)
+            // Leave cannot end before BASE_IN (09:30) and cannot exceed 19:30
             requiredLeaveEnd = Math.max(BASE_IN, requiredLeaveEnd);
+            requiredLeaveEnd = Math.min(19 * 60 + 30, requiredLeaveEnd);
             
             implicitLeave = calcLeave(BASE_IN, requiredLeaveEnd);
             let latestClockIn = getLatestClockIn(implicitLeave, BASE_IN); // BASE_IN since morning start
             effectiveClockIn = Math.min(clockIn, latestClockIn);
 
+            let maxLeaveHours = implicitLeave / 60;
+
             html += `<div class="res-box res-danger">
                 <div>⚠️ <strong>遲到警告</strong></div>
                 您已超過最晚彈性上班時間(10:30)。<br>
-                建議補請假單 <strong>09:30 - ${minsToTime(requiredLeaveEnd)}</strong>，以免系統視為遲到！
+                建議補請假單最多共 <strong style="color: #ef4444;">${maxLeaveHours.toFixed(1)}</strong> 小時<br>
+                最晚為 <strong>09:30 - ${minsToTime(requiredLeaveEnd)}</strong>，以免系統視為遲到！
             </div>`;
         }
 
@@ -201,6 +205,17 @@ function calculate() {
                 if (remainingLeaveMins > 0) {
                     let eveningStart = effectiveOut;
                     let eveningEnd = eveningStart + remainingLeaveMins;
+                    
+                    if (eveningEnd > (19 * 60 + 30)) {
+                        let overflow = eveningEnd - (19 * 60 + 30);
+                        eveningEnd = 19 * 60 + 30;
+                        eveningStart -= overflow;
+                        // Avoid pushing start before lunch end if it shouldn't
+                        if (eveningStart < LUNCH_END && eveningStart > LUNCH_START) {
+                            eveningStart = LUNCH_START - (LUNCH_END - eveningStart);
+                        }
+                    }
+                    
                     leaveSuggestions = `建議請假填寫時段：<br>
                         <strong>09:30 - ${minsToTime(morningEnd)}</strong><br>
                         <strong>${minsToTime(eveningStart)} - ${minsToTime(eveningEnd)}</strong><br>
@@ -217,6 +232,19 @@ function calculate() {
                     eveningEnd++;
                     if (eveningEnd <= LUNCH_START || eveningEnd > LUNCH_END) {
                         neededToFill--;
+                    }
+                }
+                
+                if (eveningEnd > (19 * 60 + 30)) {
+                    let overflow = eveningEnd - (19 * 60 + 30);
+                    eveningEnd = 19 * 60 + 30;
+                    
+                    neededToFill = overflow;
+                    while (neededToFill > 0) {
+                        eveningStart--;
+                        if (eveningStart < LUNCH_START || eveningStart >= LUNCH_END) {
+                            neededToFill--;
+                        }
                     }
                 }
                 
