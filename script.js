@@ -261,7 +261,12 @@ function calculate() {
                     }
                 }
                 
-                leaveSuggestions = `建議請假填寫時段： <strong>${minsToTime(eveningStart)} - ${minsToTime(eveningEnd)}</strong>`;
+                let lunchNote = '';
+                if (eveningStart < LUNCH_END && eveningEnd > LUNCH_START) {
+                    lunchNote = `<br><small style="opacity:0.8">(若包含12:00-13:00午休，系統會自動扣除不計)</small>`;
+                }
+                
+                leaveSuggestions = `建議請假填寫時段： <strong>${minsToTime(eveningStart)} - ${minsToTime(eveningEnd)}</strong>${lunchNote}`;
             }
 
             html += `<div class="res-box res-warning">
