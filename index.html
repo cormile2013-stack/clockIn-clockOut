@@ -24,7 +24,6 @@
             <div class="tabs">
                 <button class="tab-btn active" data-target="normal">一般上班試算</button>
                 <button class="tab-btn" data-target="leave">一般請假</button>
-                <button class="tab-btn" data-target="remote">遠端會議 (不扣薪假)</button>
             </div>
 
             <div class="card">
@@ -39,42 +38,16 @@
 
                 <!-- Mode Leave -->
                 <div id="section-leave" class="input-section">
-                    <p class="section-desc">輸入您的請假時段，我們會自動扣除午休並計算打卡時間。</p>
+                    <p class="section-desc">輸入您的上下班打卡時間，我們會自動為您建議最適請假時段與扣除時數。</p>
                     <div class="row">
                         <div class="input-group">
-                            <label>請假開始時間</label>
-                            <input type="time" id="leaveStart" class="time-input" value="09:30" min="08:30" max="19:30">
+                            <label>進辦公室打卡時間 <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">必填</span></label>
+                            <input type="time" id="clockIn-leave" class="time-input" min="08:30" max="19:30" required>
                         </div>
                         <div class="input-group">
-                            <label>請假結束時間</label>
-                            <input type="time" id="leaveEnd" class="time-input" value="18:30" min="08:30" max="19:30">
+                            <label>預計下班打卡時間 <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">必填</span></label>
+                            <input type="time" id="clockOut-leave" class="time-input" min="08:30" max="19:30" required>
                         </div>
-                    </div>
-                    <div class="input-group">
-                        <label>進辦公室打卡時間 <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">必填</span></label>
-                        <input type="time" id="clockIn-leave" class="time-input" min="08:30" max="19:30" required>
-                    </div>
-                </div>
-
-                <!-- Mode Remote -->
-                <div id="section-remote" class="input-section">
-                    <p class="section-desc">開會多久請多久，系統會自動給予彈性並計算您最晚進公司的時間。</p>
-                    <div class="input-group">
-                        <label>遠端會議時數</label>
-                        <select id="remoteHours" class="select-input">
-                            <option value="0.5">0.5 小時 (30分鐘)</option>
-                            <option value="1.0" selected>1.0 小時</option>
-                            <option value="1.5">1.5 小時</option>
-                            <option value="2.0">2.0 小時</option>
-                            <option value="2.5">2.5 小時</option>
-                            <option value="3.0">3.0 小時</option>
-                            <option value="3.5">3.5 小時</option>
-                            <option value="4.0">4.0 小時</option>
-                        </select>
-                    </div>
-                    <div class="input-group">
-                        <label>進辦公室打卡時間 <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">必填</span></label>
-                        <input type="time" id="clockIn-remote" class="time-input" min="08:30" max="19:30" required>
                     </div>
                 </div>
 
