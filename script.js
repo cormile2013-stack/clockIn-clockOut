@@ -120,6 +120,11 @@ function calculate() {
             requiredLeaveEnd = Math.max(BASE_IN, requiredLeaveEnd);
             requiredLeaveEnd = Math.min(19 * 60 + 30, requiredLeaveEnd);
             
+            // If it falls within lunch, snapping it to end of lunch gives more flex for the same leave cost
+            if (requiredLeaveEnd > LUNCH_START && requiredLeaveEnd < LUNCH_END) {
+                requiredLeaveEnd = LUNCH_END;
+            }
+            
             implicitLeave = calcLeave(BASE_IN, requiredLeaveEnd);
             let latestClockIn = getLatestClockIn(implicitLeave, BASE_IN); // BASE_IN since morning start
             effectiveClockIn = Math.min(clockIn, latestClockIn);
@@ -197,9 +202,12 @@ function calculate() {
             if (cIn > FLEX_LATE_IN) {
                 // Must leave morning
                 let morningEnd = Math.max(BASE_IN, Math.ceil((cIn - 60) / 30) * 30);
-                if (morningEnd > LUNCH_START) morningEnd = LUNCH_START;
+                // If it falls within lunch, snapping it to end of lunch gives more flex for the same leave cost
+                if (morningEnd > LUNCH_START && morningEnd < LUNCH_END) {
+                    morningEnd = LUNCH_END;
+                }
                 
-                let morningLeaveMins = morningEnd - BASE_IN;
+                let morningLeaveMins = calcLeave(BASE_IN, morningEnd);
                 
                 // --- UPDATE TOTAL NEEDED LEAVE IF MORNING LEAVE FORCED IS LARGER ---
                 if (neededLeaveHours * 60 < morningLeaveMins) {
