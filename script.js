@@ -197,8 +197,13 @@ function calculate() {
             // Generate suggested leave slots
             let leaveSuggestions = '';
 
-            // If clock-in is late (after 10:30), they MUST cover the time elapsed from 10:30 to clock-in.
-            if (cIn > FLEX_LATE_IN) {
+            // If they need 8 or more hours of leave, it is exactly a full day.
+            if (neededLeaveHours >= 8.0) {
+                neededLeaveHours = 8.0; // clamp it to exactly 8.0 just in case
+                leaveSuggestions = `建議請假填寫時段： <strong>09:30 - 18:30</strong><br>
+                    <small style="opacity:0.8">(包含12:00-13:00午休，系統會自動扣除不計)</small>`;
+            } else if (cIn > FLEX_LATE_IN) {
+                // If clock-in is late (after 10:30), they MUST cover the time elapsed from 10:30 to clock-in.
                 let rawMorningLeave = calcLeave(FLEX_LATE_IN, cIn);
                 morningLeaveMins = Math.ceil(rawMorningLeave / 30) * 30;
                 
