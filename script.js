@@ -110,19 +110,18 @@ function calculate() {
         let effectiveClockIn = clockIn;
 
         if (clockIn > FLEX_LATE_IN) {
-            // Find necessary leave end time
-            // To be allowed to clock in at `clockIn`, the leave must give enough flex time.
-            // A leave ending at `leaveEnd` allows clock-in up to `leaveEnd + 60` (if before lunch).
-            // So leaveEnd + 60 >= clockIn  =>  leaveEnd >= clockIn - 60
-            // We round `clockIn - 60` UP to the nearest 30 mins.
-            let requiredLeaveEnd = Math.ceil((clockIn - 60) / 30) * 30;
-            // Leave cannot end before BASE_IN (09:30) and cannot exceed 19:30
-            requiredLeaveEnd = Math.max(BASE_IN, requiredLeaveEnd);
-            requiredLeaveEnd = Math.min(19 * 60 + 30, requiredLeaveEnd);
+            // The required morning leave to legally clock in at cIn is the time elapsed since the latest flex (10:30)
+            let rawMorningLeave = calcLeave(FLEX_LATE_IN, clockIn);
+            let morningLeagueReqMins = Math.ceil(rawMorningLeave / 30) * 30;
             
-            // If it falls within lunch, snapping it to end of lunch gives more flex for the same leave cost
-            if (requiredLeaveEnd > LUNCH_START && requiredLeaveEnd < LUNCH_END) {
-                requiredLeaveEnd = LUNCH_END;
+            // Calculate morningEnd by adding morningLeagueReqMins to BASE_IN skipping lunch
+            requiredLeaveEnd = BASE_IN;
+            let added = 0;
+            while(added < morningLeagueReqMins) {
+                requiredLeaveEnd++;
+                if (requiredLeaveEnd <= LUNCH_START || requiredLeaveEnd > LUNCH_END) {
+                    added++;
+                }
             }
             
             implicitLeave = calcLeave(BASE_IN, requiredLeaveEnd);
@@ -198,18 +197,22 @@ function calculate() {
             // Generate suggested leave slots
             let leaveSuggestions = '';
 
-            // If clock-in is late (after 10:30), they MUST cover from 09:30 to their flexible needed start.
+            // If clock-in is late (after 10:30), they MUST cover the time elapsed from 10:30 to clock-in.
             if (cIn > FLEX_LATE_IN) {
-                // Must leave morning
-                let morningEnd = Math.max(BASE_IN, Math.ceil((cIn - 60) / 30) * 30);
-                // If it falls within lunch, snapping it to end of lunch gives more flex for the same leave cost
-                if (morningEnd > LUNCH_START && morningEnd < LUNCH_END) {
-                    morningEnd = LUNCH_END;
+                let rawMorningLeave = calcLeave(FLEX_LATE_IN, cIn);
+                morningLeaveMins = Math.ceil(rawMorningLeave / 30) * 30;
+                
+                // Calculate morningEnd by adding morningLeaveMins to BASE_IN skipping lunch
+                let morningEnd = BASE_IN;
+                let added = 0;
+                while(added < morningLeaveMins) {
+                    morningEnd++;
+                    if (morningEnd <= LUNCH_START || morningEnd > LUNCH_END) {
+                        added++;
+                    }
                 }
                 
-                let morningLeaveMins = calcLeave(BASE_IN, morningEnd);
-                
-                // --- UPDATE TOTAL NEEDED LEAVE IF MORNING LEAVE FORCED IS LARGER ---
+                // Total needed leave may be more than morning leave, but shouldn't be less
                 if (neededLeaveHours * 60 < morningLeaveMins) {
                     neededLeaveHours = morningLeaveMins / 60;
                 }
@@ -217,15 +220,24 @@ function calculate() {
                 let remainingLeaveMins = (neededLeaveHours * 60) - morningLeaveMins;
                 if (remainingLeaveMins > 0) {
                     let eveningStart = effectiveOut;
-                    let eveningEnd = eveningStart + remainingLeaveMins;
+                    let eveningEnd = eveningStart;
+                    let toFill = remainingLeaveMins;
+                    while (toFill > 0) {
+                        eveningEnd++;
+                        if (eveningEnd <= LUNCH_START || eveningEnd > LUNCH_END) {
+                            toFill--;
+                        }
+                    }
                     
                     if (eveningEnd > (19 * 60 + 30)) {
                         let overflow = eveningEnd - (19 * 60 + 30);
                         eveningEnd = 19 * 60 + 30;
-                        eveningStart -= overflow;
-                        // Avoid pushing start before lunch end if it shouldn't
-                        if (eveningStart < LUNCH_END && eveningStart > LUNCH_START) {
-                            eveningStart = LUNCH_START - (LUNCH_END - eveningStart);
+                        toFill = overflow;
+                        while(toFill > 0) {
+                            eveningStart--;
+                            if (eveningStart < LUNCH_START || eveningStart >= LUNCH_END) {
+                                toFill--;
+                            }
                         }
                     }
                     
